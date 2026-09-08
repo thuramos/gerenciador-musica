@@ -47,12 +47,14 @@ public class HistoricoService {
     public void registrarVisualizacao(Long musicaId) {
         Usuario usuario = obterUsuarioAutenticado();
 
-        boolean repeticaoConsecutiva = historicoMusicaRepository
-                .findFirstByUsuario_IdOrderByVisualizadoEmDesc(usuario.getId())
-                .map(ultimoRegistro ->
-                        ultimoRegistro.getMusica().getIdMusica().equals(musicaId)
-                )
-                .orElse(false);
+        List<Long> ultimasVisualizadas = historicoMusicaRepository
+                .buscarIdsDasUltimasMusicasVisualizadas(
+                        usuario.getId(),
+                        PageRequest.of(0, 1)
+                );
+
+        boolean repeticaoConsecutiva = !ultimasVisualizadas.isEmpty()
+                && ultimasVisualizadas.get(0).equals(musicaId);
 
         if (repeticaoConsecutiva) {
             return;

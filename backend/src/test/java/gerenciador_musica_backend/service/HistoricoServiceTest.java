@@ -96,8 +96,8 @@ class HistoricoServiceTest {
         Musica musica = montarMusica(5L, "Bohemian Rhapsody");
 
         when(historicoMusicaRepository
-                .findFirstByUsuario_IdOrderByVisualizadoEmDesc(1L))
-                .thenReturn(Optional.empty());
+                .buscarIdsDasUltimasMusicasVisualizadas(eq(1L), any(Pageable.class)))
+                .thenReturn(List.of());
         when(musicaRepository.findById(5L)).thenReturn(Optional.of(musica));
 
         historicoService.registrarVisualizacao(5L);
@@ -108,12 +108,9 @@ class HistoricoServiceTest {
 
     @Test
     void naoDeveRegistrarQuandoUltimaMusicaVistaForAMesma() {
-        Musica musica = montarMusica(5L, "Bohemian Rhapsody");
-        HistoricoMusica ultimoRegistro = new HistoricoMusica(usuarioLogado, musica);
-
         when(historicoMusicaRepository
-                .findFirstByUsuario_IdOrderByVisualizadoEmDesc(1L))
-                .thenReturn(Optional.of(ultimoRegistro));
+                .buscarIdsDasUltimasMusicasVisualizadas(eq(1L), any(Pageable.class)))
+                .thenReturn(List.of(5L));
 
         historicoService.registrarVisualizacao(5L);
 
@@ -125,14 +122,11 @@ class HistoricoServiceTest {
 
     @Test
     void deveRegistrarQuandoUltimaMusicaVistaForDiferente() {
-        Musica musicaAnterior = montarMusica(3L, "Outra música");
         Musica musicaAtual = montarMusica(5L, "Bohemian Rhapsody");
-        HistoricoMusica ultimoRegistro =
-                new HistoricoMusica(usuarioLogado, musicaAnterior);
 
         when(historicoMusicaRepository
-                .findFirstByUsuario_IdOrderByVisualizadoEmDesc(1L))
-                .thenReturn(Optional.of(ultimoRegistro));
+                .buscarIdsDasUltimasMusicasVisualizadas(eq(1L), any(Pageable.class)))
+                .thenReturn(List.of(3L));
         when(musicaRepository.findById(5L)).thenReturn(Optional.of(musicaAtual));
 
         historicoService.registrarVisualizacao(5L);
@@ -143,8 +137,8 @@ class HistoricoServiceTest {
     @Test
     void deveLancarExcecaoQuandoMusicaNaoExiste() {
         when(historicoMusicaRepository
-                .findFirstByUsuario_IdOrderByVisualizadoEmDesc(1L))
-                .thenReturn(Optional.empty());
+                .buscarIdsDasUltimasMusicasVisualizadas(eq(1L), any(Pageable.class)))
+                .thenReturn(List.of());
         when(musicaRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> historicoService.registrarVisualizacao(99L))
