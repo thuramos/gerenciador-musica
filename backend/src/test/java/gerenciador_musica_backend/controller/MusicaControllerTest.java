@@ -8,6 +8,7 @@ import gerenciador_musica_backend.dto.MusicaResponseDTO;
 import gerenciador_musica_backend.dto.PaginaResponseDTO;
 import gerenciador_musica_backend.exception.DadosMusicaInvalidosException;
 import gerenciador_musica_backend.exception.MusicaNaoEncontradaException;
+import gerenciador_musica_backend.service.HistoricoService;
 import gerenciador_musica_backend.service.MusicaService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,8 @@ import java.util.Set;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -41,6 +44,9 @@ class MusicaControllerTest {
 
     @MockitoBean
     private MusicaService musicaService;
+
+    @MockitoBean
+    private HistoricoService historicoService;
 
     @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -138,11 +144,23 @@ class MusicaControllerTest {
     }
 
     @Test
+    void deveRegistrarVisualizacaoNoHistoricoAoBuscarMusicaPorId() throws Exception {
+        when(musicaService.buscarPorId(1L)).thenReturn(montarMusicaResposta());
+
+        mockMvc.perform(get("/api/musicas/1"))
+                .andExpect(status().isOk());
+
+        verify(historicoService).registrarVisualizacao(1L);
+    }
+
+    @Test
     void deveRetornar404QuandoMusicaNaoEncontrada() throws Exception {
         when(musicaService.buscarPorId(99L))
                 .thenThrow(new MusicaNaoEncontradaException(99L));
 
         mockMvc.perform(get("/api/musicas/99"))
                 .andExpect(status().isNotFound());
+
+        verify(historicoService, never()).registrarVisualizacao(any());
     }
 }

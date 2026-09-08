@@ -4,6 +4,7 @@ import gerenciador_musica_backend.dto.MusicaFiltroDTO;
 import gerenciador_musica_backend.dto.MusicaListagemDTO;
 import gerenciador_musica_backend.dto.MusicaResponseDTO;
 import gerenciador_musica_backend.dto.PaginaResponseDTO;
+import gerenciador_musica_backend.service.HistoricoService;
 import gerenciador_musica_backend.service.MusicaService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,9 +19,14 @@ import org.springframework.web.bind.annotation.*;
 public class MusicaController {
 
     private final MusicaService musicaService;
+    private final HistoricoService historicoService;
 
-    public MusicaController(MusicaService musicaService) {
+    public MusicaController(
+            MusicaService musicaService,
+            HistoricoService historicoService
+    ) {
         this.musicaService = musicaService;
+        this.historicoService = historicoService;
     }
 
     /**
@@ -63,7 +69,8 @@ public class MusicaController {
 
     /**
      * GET /api/musicas/{id} — detalhes completos de uma música
-     * (letra, participantes, álbum, gêneros).
+     * (letra, participantes, álbum, gêneros). Registra a consulta no
+     * histórico de músicas acessadas do usuário autenticado (US16).
      *
      * @return 200 OK com MusicaResponseDTO, ou 404 (via
      *         MusicaNaoEncontradaException) quando o ID não existir
@@ -72,8 +79,10 @@ public class MusicaController {
     public ResponseEntity<MusicaResponseDTO> buscarPorId(
             @PathVariable Long id
     ) {
-        return ResponseEntity.ok(
-                musicaService.buscarPorId(id)
-        );
+        MusicaResponseDTO musica = musicaService.buscarPorId(id);
+
+        historicoService.registrarVisualizacao(id);
+
+        return ResponseEntity.ok(musica);
     }
 }
