@@ -1,6 +1,7 @@
 import { provideRouter } from '@angular/router';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
+import type { HistoricoItem } from '../../../models/HistoricoItem';
 import type { PerfilResponse } from '../../../models/Perfil';
 import type { PlaylistResponse } from '../../../models/PlaylistResponse';
 import type { Review } from '../../../models/Review';
@@ -50,9 +51,16 @@ describe('PerfilAtividade', () => {
     especial: false
   };
 
+  const historicoDeExemplo: HistoricoItem = {
+    idHistorico: 1,
+    musica: { id: 10, titulo: 'Por Supuesto', artista: 'Marina Sena', capaUrl: null },
+    visualizadoEm: '2026-01-01T00:00:00Z'
+  };
+
   async function configurar(
     reviewsRecentes: Review[] = [],
-    playlists: PlaylistResponse[] = []
+    playlists: PlaylistResponse[] = [],
+    historico: HistoricoItem[] = []
   ): Promise<void> {
     await TestBed.configureTestingModule({
       imports: [PerfilAtividade],
@@ -63,6 +71,7 @@ describe('PerfilAtividade', () => {
     fixture.componentRef.setInput('perfil', perfilDeExemplo);
     fixture.componentRef.setInput('reviewsRecentes', reviewsRecentes);
     fixture.componentRef.setInput('playlists', playlists);
+    fixture.componentRef.setInput('historico', historico);
     fixture.detectChanges();
   }
 
@@ -101,6 +110,24 @@ describe('PerfilAtividade', () => {
 
     expect(fixture.nativeElement.querySelector('.playlists-area').textContent)
       .toContain('ainda não criou nenhuma playlist');
+  });
+
+  it('deve exibir as músicas visualizadas recentemente quando existirem', async () => {
+    await configurar([], [], [historicoDeExemplo]);
+
+    const cartoes = fixture.nativeElement.querySelectorAll(
+      '.historico-lista-horizontal .historico-card'
+    );
+    expect(cartoes.length).toBe(1);
+    expect(cartoes[0].textContent).toContain('Por Supuesto');
+    expect(cartoes[0].getAttribute('href')).toBe('/musicas/10');
+  });
+
+  it('deve exibir mensagem de estado vazio quando não há histórico', async () => {
+    await configurar();
+
+    expect(fixture.nativeElement.querySelector('.historico-area').textContent)
+      .toContain('ainda não visualizou nenhuma música');
   });
 
   it('deve exibir a biografia ou uma mensagem padrão', async () => {

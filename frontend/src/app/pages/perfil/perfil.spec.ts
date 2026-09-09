@@ -4,12 +4,14 @@ import { provideRouter } from '@angular/router';
 import { Subject, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
+import type { HistoricoItem } from '../../models/HistoricoItem';
 import type { MusicaListagem } from '../../models/MusicaListagem';
 import type { PaginaResponse } from '../../models/PaginaResponse';
 import type { PerfilResponse } from '../../models/Perfil';
 import type { PlaylistResponse } from '../../models/PlaylistResponse';
 import type { Review } from '../../models/Review';
 import { CatalogoService } from '../../services/catalogo';
+import { HistoricoService } from '../../services/historico';
 import { MusicaService } from '../../services/musica';
 import { PerfilService } from '../../services/perfil';
 import { PlaylistService } from '../../services/playlist';
@@ -36,6 +38,9 @@ describe('Perfil', () => {
   };
   let playlistServiceMock: {
     listarMinhas: ReturnType<typeof vi.fn>;
+  };
+  let historicoServiceMock: {
+    listar: ReturnType<typeof vi.fn>;
   };
 
   const perfil: PerfilResponse = {
@@ -115,6 +120,9 @@ describe('Perfil', () => {
     playlistServiceMock = {
       listarMinhas: vi.fn().mockReturnValue(of([]))
     };
+    historicoServiceMock = {
+      listar: vi.fn().mockReturnValue(of(paginaHistorico([])))
+    };
 
     await TestBed.configureTestingModule({
       imports: [Perfil],
@@ -124,7 +132,8 @@ describe('Perfil', () => {
         { provide: CatalogoService, useValue: catalogoServiceMock },
         { provide: MusicaService, useValue: musicaServiceMock },
         { provide: ReviewService, useValue: reviewServiceMock },
-        { provide: PlaylistService, useValue: playlistServiceMock }
+        { provide: PlaylistService, useValue: playlistServiceMock },
+        { provide: HistoricoService, useValue: historicoServiceMock }
       ]
     }).compileComponents();
 
@@ -344,6 +353,16 @@ describe('Perfil', () => {
     };
   }
 
+  function paginaHistorico(itens: HistoricoItem[]): PaginaResponse<HistoricoItem> {
+    return {
+      itens,
+      paginaAtual: 0,
+      tamanhoPagina: 10,
+      totalItens: itens.length,
+      totalPaginas: 1
+    };
+  }
+
   function playlistDeExemplo(): PlaylistResponse {
     return {
       id: 1,
@@ -436,6 +455,37 @@ describe('Perfil', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.playlists()).toEqual([]);
+  });
+
+  it('deve exibir as músicas visualizadas recentemente', () => {
+    historicoServiceMock.listar.mockReturnValue(of(paginaHistorico([{
+      idHistorico: 1,
+      musica: { id: 10, titulo: 'Por Supuesto', artista: 'Marina Sena', capaUrl: null },
+      visualizadoEm: '2026-01-01T00:00:00Z'
+    }])));
+
+    fixture = TestBed.createComponent(Perfil);
+    fixture.detectChanges();
+
+    const cartoes = fixture.nativeElement.querySelectorAll(
+      '.historico-lista-horizontal .historico-card'
+    );
+    expect(cartoes).toHaveLength(1);
+    expect(cartoes[0].textContent).toContain('Por Supuesto');
+  });
+
+  it('deve exibir mensagem de estado vazio quando não há histórico', () => {
+    expect(fixture.nativeElement.querySelector('.historico-area').textContent)
+      .toContain('ainda não visualizou nenhuma música');
+  });
+
+  it('deve manter o histórico vazio quando a busca falha', () => {
+    historicoServiceMock.listar.mockReturnValue(throwError(() => new Error('erro')));
+
+    fixture = TestBed.createComponent(Perfil);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.historico()).toEqual([]);
   });
 
   it('deve exibir mensagem de erro quando o catálogo falha ao carregar', () => {

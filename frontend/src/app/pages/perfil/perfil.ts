@@ -21,6 +21,7 @@ import { catchError, finalize, forkJoin, map, of } from 'rxjs';
 
 import type { AlbumResponse } from '../../models/AlbumResponse';
 import type { ArtistaResponse } from '../../models/ArtistaResponse';
+import type { HistoricoItem } from '../../models/HistoricoItem';
 import type { MusicaListagem } from '../../models/MusicaListagem';
 import type {
   AtualizarPerfilRequest,
@@ -31,6 +32,7 @@ import type {
 import type { PlaylistResponse } from '../../models/PlaylistResponse';
 import type { Review } from '../../models/Review';
 import { CatalogoService } from '../../services/catalogo';
+import { HistoricoService } from '../../services/historico';
 import { MusicaService } from '../../services/musica';
 import { PerfilService } from '../../services/perfil';
 import { PlaylistService } from '../../services/playlist';
@@ -38,6 +40,7 @@ import { ReviewService } from '../../services/review';
 import { PerfilAtividade } from './perfil-atividade/perfil-atividade';
 
 const TAMANHO_REVIEWS_RECENTES = 5;
+const TAMANHO_HISTORICO_RECENTE = 10;
 
 type CampoFavoritos =
   | 'idsArtistasFavoritos'
@@ -68,6 +71,7 @@ export class Perfil implements OnInit {
 
   readonly reviewsRecentes = signal<Review[]>([]);
   readonly playlists = signal<PlaylistResponse[]>([]);
+  readonly historico = signal<HistoricoItem[]>([]);
 
   readonly artistas = signal<ArtistaResponse[]>([]);
   readonly musicas = signal<MusicaListagem[]>([]);
@@ -178,7 +182,8 @@ export class Perfil implements OnInit {
     private readonly catalogoService: CatalogoService,
     private readonly musicaService: MusicaService,
     private readonly reviewService: ReviewService,
-    private readonly playlistService: PlaylistService
+    private readonly playlistService: PlaylistService,
+    private readonly historicoService: HistoricoService
   ) {
     effect(() => {
       const dialog = this.editorDialog()?.nativeElement;
@@ -196,6 +201,7 @@ export class Perfil implements OnInit {
     this.carregarPerfil();
     this.carregarReviewsRecentes();
     this.carregarPlaylists();
+    this.carregarHistorico();
   }
 
   abrirEdicao(): void {
@@ -395,6 +401,13 @@ export class Perfil implements OnInit {
     this.playlistService.listarMinhas().subscribe({
       next: playlists => this.playlists.set(playlists),
       error: () => this.playlists.set([])
+    });
+  }
+
+  private carregarHistorico(): void {
+    this.historicoService.listar(0, TAMANHO_HISTORICO_RECENTE).subscribe({
+      next: pagina => this.historico.set(pagina.itens),
+      error: () => this.historico.set([])
     });
   }
 

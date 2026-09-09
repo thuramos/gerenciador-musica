@@ -26,6 +26,38 @@
   }
 </section>
 
+<section class="historico-area" aria-labelledby="titulo-historico-perfil">
+  <div class="secao-cabecalho">
+    <div><span>Atividade recente</span><h2 id="titulo-historico-perfil">Visualizados recentemente</h2></div>
+  </div>
+
+  @if (historico().length > 0) {
+    <div class="historico-lista-horizontal">
+      @for (item of historico(); track item.idHistorico) {
+        <a class="historico-card" [routerLink]="['/musicas', item.musica.id]">
+          <span class="historico-card__capa">
+            @if (item.musica.capaUrl) {
+              <img
+                [src]="item.musica.capaUrl"
+                [alt]="'Capa de ' + item.musica.titulo"
+                loading="lazy"
+                (error)="aoFalharCapa($event)"
+              />
+            } @else {
+              <span class="historico-card__nota" aria-hidden="true">♪</span>
+            }
+          </span>
+
+          <strong class="historico-card__titulo">{{ item.musica.titulo }}</strong>
+          <span class="historico-card__artista">{{ item.musica.artista }}</span>
+        </a>
+      }
+    </div>
+  } @else {
+    <p class="lista-vazia">Você ainda não visualizou nenhuma música.</p>
+  }
+</section>
+
 <section class="playlists-area" aria-labelledby="titulo-playlists-perfil">
   <div class="secao-cabecalho">
     <div><span>Sua biblioteca</span><h2 id="titulo-playlists-perfil">Suas playlists</h2></div>
